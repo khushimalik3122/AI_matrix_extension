@@ -109,7 +109,7 @@ class ContextRetriever {
     async retrieveSemanticContext(query, topK) {
         const searchResults = await this.embeddingManager.search(query, topK * 2); // Get more results to allow for boosting
         // Boost score for recently accessed files
-        const boostedResults = searchResults.map(result => {
+        const boostedResults = searchResults.map((result) => {
             const recentIndex = this.recentFiles.findIndex(u => u.fsPath === result.chunk.uri.fsPath);
             if (recentIndex !== -1) {
                 // Boost score based on recency (higher boost for more recent files)
@@ -119,7 +119,7 @@ class ContextRetriever {
             return result;
         });
         boostedResults.sort((a, b) => b.similarity - a.similarity);
-        return boostedResults.slice(0, topK).map(r => r.chunk);
+        return boostedResults.slice(0, topK).map((r) => r.chunk);
     }
     async retrieveLocalContext() {
         const activeEditor = vscode.window.activeTextEditor;

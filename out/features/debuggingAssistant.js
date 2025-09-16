@@ -70,7 +70,7 @@ class DebuggingAssistant {
             3. A concrete suggestion for how to fix the code, including code snippets if applicable.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         }
         catch (err) {
             logger_1.logger.error(`Error analyzing error: ${err.message}`);
@@ -97,7 +97,7 @@ class DebuggingAssistant {
             3. Recommendations for optimizing memory consumption.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         }
         catch (err) {
             logger_1.logger.error(`Error analyzing memory usage: ${err.message}`);
@@ -120,7 +120,7 @@ class DebuggingAssistant {
                 combinedContext += doc.getText().substring(0, 4000); // Limit context size per file
             }
             catch (error) {
-                logger_1.logger.warn(`Could not read file for context: ${uriString}`);
+                logger_1.logger.error(`Could not read file for context: ${uriString}`);
             }
         }
         return combinedContext;

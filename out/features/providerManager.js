@@ -1,71 +1,83 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProviderManager = void 0;
-const vscode = __importStar(require("vscode"));
 const perplexityProvider_1 = require("../providers/perplexityProvider");
 const geminiProvider_1 = require("../providers/geminiProvider");
 const groqProvider_1 = require("../providers/groqProvider");
 const logger_1 = require("../utils/logger");
 class ProviderManager {
     constructor(settingsManager) {
-        this.settingsManager = settingsManager;
+        this.capabilities = {
+            codeGeneration: true,
+            textExplanation: true,
+            projectScaffolding: true,
+            streaming: true,
+            vision: true, // add missing property
+        };
+        this.auth = {};
+        this.policy = {
+            rateLimiting: { requestsPerMinute: 60 }, // Set appropriate requests per minute
+            errorHandling: { maxRetries: 3, initialRetryDelayMs: 1000 } // Provide appropriate error handling config here
+        };
         this.providers = new Map();
         this.activeProvider = null;
         this.fallbackProviders = [];
-        this.loadProviders();
-        // Listen for configuration changes to reload providers
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('my-ai-extension.apiKeys')) {
-                this.loadProviders();
+        this.settingsManager = settingsManager;
+        // Fire-and-forget provider loading
+        void this.loadProviders();
+    }
+    async generateResponse(arg1, options) {
+        const prompt = typeof arg1 === 'string' ? arg1 : arg1.prompt;
+        let opts;
+        if (typeof arg1 === 'string') {
+            opts = options;
+        }
+        else {
+            const { prompt: _p, ...rest } = arg1;
+            opts = rest;
+        }
+        if (this.activeProvider) {
+            return this.activeProvider.generateResponse(prompt, opts);
+        }
+        throw new Error("No active provider");
+    }
+    async *streamResponse(prompt, options) {
+        if (this.activeProvider && typeof this.activeProvider.streamResponse === 'function') {
+            for await (const token of this.activeProvider.streamResponse(prompt, options)) {
+                yield token;
             }
-        });
+            return;
+        }
+        throw new Error("No active provider or streamResponse not implemented");
+    }
+    async generateVisionResponse(prompt, images, options) {
+        if (this.activeProvider && typeof this.activeProvider.generateVisionResponse === 'function') {
+            return this.activeProvider.generateVisionResponse(prompt, images, options);
+        }
+        throw new Error("No active provider or generateVisionResponse not implemented");
+    }
+    setActiveProvider(providerName) {
+        const provider = this.providers.get(providerName);
+        if (provider) {
+            this.activeProvider = provider;
+        }
     }
     async loadProviders() {
         this.providers.clear();
         const perplexityKey = await this.settingsManager.getApiKey('perplexity');
         if (perplexityKey) {
-            this.providers.set('Perplexity', new perplexityProvider_1.PerplexityProvider({ apiKey: perplexityKey }));
+            const auth = { type: 'apiKey', key: perplexityKey };
+            this.providers.set('Perplexity', new perplexityProvider_1.PerplexityProvider(auth));
         }
         const geminiKey = await this.settingsManager.getApiKey('gemini');
         if (geminiKey) {
-            this.providers.set('Gemini', new geminiProvider_1.GeminiProvider({ apiKey: geminiKey }));
+            const auth = { type: 'apiKey', key: geminiKey };
+            this.providers.set('Gemini', new geminiProvider_1.GeminiProvider(auth));
         }
         const groqKey = await this.settingsManager.getApiKey('groq');
         if (groqKey) {
-            this.providers.set('Groq', new groqProvider_1.GroqProvider({ apiKey: groqKey }));
+            const auth = { type: 'apiKey', key: groqKey };
+            this.providers.set('Groq', new groqProvider_1.GroqProvider(auth));
         }
         if (this.providers.size > 0) {
             this.setActiveProvider(this.providers.keys().next().value);
@@ -76,6 +88,16 @@ class ProviderManager {
             this.fallbackProviders = [];
             logger_1.logger.warn("No AI providers configured. Extension functionality will be limited.");
         }
+    }
+    getAvailableProviders() {
+        return Array.from(this.providers.keys());
+    }
+    getActiveProviderName() {
+        for (const [name, provider] of this.providers.entries()) {
+            if (provider === this.activeProvider)
+                return name;
+        }
+        return '';
     }
 }
 exports.ProviderManager = ProviderManager;

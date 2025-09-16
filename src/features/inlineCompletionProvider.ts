@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { ProviderManager } from './providerManager';
 import { ContextRetriever } from './contextRetriever';
 import { logger } from '../utils/logger';
+import { EmbeddingManager } from './embeddingManager';
+import { CodeParser } from './codeParser';
+import { SettingsManager } from './settingsManager';
 
 interface CacheItem {
     items: vscode.InlineCompletionItem[];
@@ -11,7 +14,24 @@ const completionCache = new Map<string, CacheItem>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export class InlineCompletionProvider implements vscode.InlineCompletionItemProvider {
-    // ... (constructor and other methods)
+    private providerManager: ProviderManager;
+    private contextRetriever: ContextRetriever;
+
+    constructor(providerManager: ProviderManager, contextRetriever: ContextRetriever) {
+        this.providerManager = providerManager;
+        this.contextRetriever = contextRetriever;
+    }
+
+
+    // Implementation of the required method
+    public async provideInlineCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        token: vscode.CancellationToken
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | undefined> {
+        return await this.fetchCompletions(document, position, context);
+    }
 
     private async fetchCompletions(
         document: vscode.TextDocument,
@@ -30,6 +50,9 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
 
         try {
             // ... (rest of the fetch logic)
+            // Replace this with your actual completion string logic
+            const completionText = "Your completion text here";
+            const cleanCompletion = completionText.trim();
             const result = [new vscode.InlineCompletionItem(cleanCompletion)];
             
             // Update cache with timestamp
@@ -57,6 +80,10 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
         }
     }
     
+    private generateCacheKey(document: vscode.TextDocument, position: vscode.Position): string {
+        // Use document URI and position to generate a unique cache key
+        return `${document.uri.toString()}:${position.line}:${position.character}`;
+    }
+
     // ... (rest of the class)
 }
-

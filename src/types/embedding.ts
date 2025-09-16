@@ -28,3 +28,12 @@ export interface SimilaritySearchResult {
     chunk: CodeChunk;
     similarity: number;
 }
+
+/**
+ * Internal vector store item shape used by EmbeddingManager.
+ */
+export interface VectorStoreItem {
+    uri: string;
+    chunk: CodeChunk;
+    embedding: number[];
+}

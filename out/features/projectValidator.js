@@ -40,6 +40,13 @@ const completionCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 class InlineCompletionProvider {
     // ... (constructor and other methods)
+    async provideInlineCompletionItems(document, position, context, token) {
+        return this.fetchCompletions(document, position, context);
+    }
+    generateCacheKey(document, position) {
+        // Use document URI and position to generate a unique cache key
+        return `${document.uri.toString()}:${position.line}:${position.character}`;
+    }
     async fetchCompletions(document, position, context) {
         // ... (initial checks)
         const cacheKey = this.generateCacheKey(document, position);
@@ -50,6 +57,9 @@ class InlineCompletionProvider {
         }
         try {
             // ... (rest of the fetch logic)
+            // Replace this with your actual completion string, e.g. from a provider or context
+            const completionText = "Your completion text here";
+            const cleanCompletion = completionText.trim();
             const result = [new vscode.InlineCompletionItem(cleanCompletion)];
             // Update cache with timestamp
             completionCache.set(cacheKey, { items: result, timestamp: Date.now() });

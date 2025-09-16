@@ -1,8 +1,7 @@
 import axios, { AxiosError } from 'axios';
-import { AIProvider, GenerationOptions } from '../types/aiProvider';
+import { GenerationOptions } from '../types/aiProvider';
 import { BaseAIProvider } from './baseAIProvider';
 import { logger } from '../utils/logger';
-import * as vscode from 'vscode';
 
 // ... (GroqModel enum remains the same)
 export enum GroqModel {
@@ -12,99 +11,71 @@ export enum GroqModel {
     GEMMA_7B = 'gemma-7b-it',
 }
 
-export class GroqProvider extends BaseAIProvider implements AIProvider {
+export class GroqProvider extends BaseAIProvider {
     private static readonly API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-    
-    public providerId = "groq";
 
-    public capabilities = {
-        streaming: true,
+    public readonly capabilities = {
         codeGeneration: true,
-        contextWindow: true,
+        textExplanation: true,
+        projectScaffolding: true,
+        streaming: true,
+        vision: false,
     };
 
-    public async generateResponse(options: GenerationOptions): Promise<string> {
-        // ... (implementation remains the same)
-        return "Not implemented for streaming example";
-    }
-
-    public async streamResponse(
-        options: GenerationOptions,
-        onData: (chunk: string) => void,
-        cancellationToken: vscode.CancellationToken
-    ): Promise<void> {
-        const model = options.model || GroqModel.LLAMA3_8B;
-
-        const source = axios.CancelToken.source();
-        const registration = cancellationToken.onCancellationRequested(() => {
-            logger.log("Cancellation requested for Groq stream. Aborting request.");
-            source.cancel("Operation canceled by the user.");
-        });
-
+    protected async _generate(prompt: string, options?: GenerationOptions): Promise<string> {
         try {
-            const response = await this.axiosInstance.post(
+            const response = await axios.post(
                 GroqProvider.API_URL,
                 {
-                    messages: [{ role: 'user', content: options.prompt }],
-                    model: model,
-                    temperature: options.temperature ?? 0.7,
-                    max_tokens: options.maxTokens ?? 1024,
+                    messages: [{ role: 'user', content: prompt }],
+                    model: GroqModel.LLAMA3_8B,
+                    temperature: options?.temperature ?? 0.7,
+                    max_tokens: options?.maxTokens ?? 1024,
+                    stream: false,
+                },
+                { headers: this.getHeaders() }
+            );
+            return response.data.choices?.[0]?.message?.content ?? '';
+        } catch (error) {
+            throw this.handleApiError(error as AxiosError);
+        }
+    }
+
+    protected async *_stream(prompt: string, options?: GenerationOptions): AsyncGenerator<string> {
+        try {
+            const response = await axios.post(
+                GroqProvider.API_URL,
+                {
+                    messages: [{ role: 'user', content: prompt }],
+                    model: GroqModel.LLAMA3_8B,
+                    temperature: options?.temperature ?? 0.7,
+                    max_tokens: options?.maxTokens ?? 1024,
                     stream: true,
                 },
-                {
-                    responseType: 'stream',
-                    cancelToken: source.token,
-                }
+                { headers: this.getHeaders(), responseType: 'stream' }
             );
 
-            // The promise will resolve when headers are received, but the stream is ongoing.
-            // We wrap the stream handling in a new promise to await its completion.
-            await new Promise<void>((resolve, reject) => {
-                response.data.on('data', (chunk: Buffer) => {
-                    if (cancellationToken.isCancellationRequested) {
-                        return; // Stop processing if cancelled
+            for await (const chunk of response.data as any) {
+                const lines = chunk.toString('utf8').split('\n').filter((line: string) => line.trim().startsWith('data: '));
+                for (const line of lines) {
+                    const msg = line.substring(6);
+                    if (msg === '[DONE]') return;
+                    try {
+                        const json = JSON.parse(msg);
+                        const content = json.choices?.[0]?.delta?.content;
+                        if (content) yield content;
+                    } catch (e) {
+                        logger.warn('Failed to parse Groq stream chunk');
                     }
-                    const lines = chunk.toString('utf8').split('\n').filter(line => line.trim() !== '');
-                    for (const line of lines) {
-                        if (line.trim() === 'data: [DONE]') {
-                            resolve();
-                            return;
-                        }
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const json = JSON.parse(line.substring(6));
-                                const content = json.choices[0]?.delta?.content;
-                                if (content) {
-                                    onData(content);
-                                }
-                            } catch (error) {
-                                logger.error('Error parsing Groq stream chunk:', error);
-                                // Don't reject here, just log and continue
-                            }
-                        }
-                    }
-                });
-
-                response.data.on('error', (error: any) => {
-                    logger.error("Error in Groq stream:", error);
-                    reject(error);
-                });
-
-                response.data.on('end', () => {
-                    resolve();
-                });
-            });
-
-        } catch (error) {
-            if (axios.isCancel(error)) {
-                logger.log('Groq stream request was cancelled.');
-            } else {
-                logger.error('Error in Groq stream request:', error);
-                throw this.handleApiError(error as AxiosError);
+                }
             }
-        } finally {
-            registration.dispose();
+        } catch (error) {
+            throw this.handleApiError(error as AxiosError);
         }
+    }
+
+    protected async _generateVision(prompt: string, images: { mimeType: 'image/png' | 'image/jpeg'; data: string; }[], options?: GenerationOptions): Promise<string> {
+        throw new Error('Vision is not supported by GroqProvider.');
     }
 
     // ... (getContextWindowSize and handleApiError methods remain the same)
@@ -118,6 +89,16 @@ export class GroqProvider extends BaseAIProvider implements AIProvider {
         } else {
             return new Error(`Error setting up the request to Groq: ${error.message}`);
         }
+    }
+
+    private getHeaders() {
+        // BaseAIProvider.auth ensures we have config; using apiKey style for Groq
+        const apiKey = (this as any).auth?.key;
+        return {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
     }
 }
 

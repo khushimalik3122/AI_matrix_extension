@@ -40,7 +40,7 @@ export class CodeRefactorer {
         `;
 
         try {
-            const suggestion = await this.providerManager.generateResponse({ prompt });
+            const suggestion = await this.providerManager.generateResponse(prompt);
             return { description: "Extract to function", newCode: suggestion };
         } catch (error: any) {
             logger.error(`Error during function extraction: ${error.message}`);
@@ -68,7 +68,7 @@ export class CodeRefactorer {
         `;
 
         try {
-            const suggestion = await this.providerManager.generateResponse({ prompt });
+            const suggestion = await this.providerManager.generateResponse(prompt);
             return { description: "Optimization Suggestion", newCode: suggestion };
         } catch (error: any) {
             logger.error(`Error suggesting optimizations: ${error.message}`);
@@ -96,7 +96,7 @@ export class CodeRefactorer {
         `;
         
         try {
-            const report = await this.providerManager.generateResponse({ prompt });
+            const report = await this.providerManager.generateResponse(prompt);
             return { description: "Security Scan Report", newCode: report };
         } catch (error: any) {
             logger.error(`Error detecting vulnerabilities: ${error.message}`);

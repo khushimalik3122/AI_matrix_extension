@@ -39,7 +39,14 @@ const logger_1 = require("../utils/logger");
 const completionCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 class InlineCompletionProvider {
-    // ... (constructor and other methods)
+    constructor(providerManager, contextRetriever) {
+        this.providerManager = providerManager;
+        this.contextRetriever = contextRetriever;
+    }
+    // Implementation of the required method
+    async provideInlineCompletionItems(document, position, context, token) {
+        return await this.fetchCompletions(document, position, context);
+    }
     async fetchCompletions(document, position, context) {
         // ... (initial checks)
         const cacheKey = this.generateCacheKey(document, position);
@@ -50,6 +57,9 @@ class InlineCompletionProvider {
         }
         try {
             // ... (rest of the fetch logic)
+            // Replace this with your actual completion string logic
+            const completionText = "Your completion text here";
+            const cleanCompletion = completionText.trim();
             const result = [new vscode.InlineCompletionItem(cleanCompletion)];
             // Update cache with timestamp
             completionCache.set(cacheKey, { items: result, timestamp: Date.now() });
@@ -71,6 +81,10 @@ class InlineCompletionProvider {
                 completionCache.delete(key);
             }
         }
+    }
+    generateCacheKey(document, position) {
+        // Use document URI and position to generate a unique cache key
+        return `${document.uri.toString()}:${position.line}:${position.character}`;
     }
 }
 exports.InlineCompletionProvider = InlineCompletionProvider;

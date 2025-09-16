@@ -23,7 +23,6 @@ export class TelemetryService {
                     logger.error(`[TELEMETRY] Error: ${error.name}`, data);
                 }
             },
-            dispose: () => {}
         };
 
         if (!this.isEnabled) {
@@ -49,8 +48,5 @@ export class TelemetryService {
         this.reporter.sendErrorData(error, properties);
     }
 
-    public dispose(): void {
-        this.reporter.dispose();
-    }
 }
 

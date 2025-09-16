@@ -18,84 +18,62 @@ var GroqModel;
 class GroqProvider extends baseAIProvider_1.BaseAIProvider {
     constructor() {
         super(...arguments);
-        this.providerId = "groq";
         this.capabilities = {
-            streaming: true,
             codeGeneration: true,
-            contextWindow: true,
+            textExplanation: true,
+            projectScaffolding: true,
+            streaming: true,
+            vision: false,
         };
     }
-    async generateResponse(options) {
-        // ... (implementation remains the same)
-        return "Not implemented for streaming example";
-    }
-    async streamResponse(options, onData, cancellationToken) {
-        const model = options.model || GroqModel.LLAMA3_8B;
-        const source = axios_1.default.CancelToken.source();
-        const registration = cancellationToken.onCancellationRequested(() => {
-            logger_1.logger.log("Cancellation requested for Groq stream. Aborting request.");
-            source.cancel("Operation canceled by the user.");
-        });
+    async _generate(prompt, options) {
         try {
-            const response = await this.axiosInstance.post(GroqProvider.API_URL, {
-                messages: [{ role: 'user', content: options.prompt }],
-                model: model,
-                temperature: options.temperature ?? 0.7,
-                max_tokens: options.maxTokens ?? 1024,
-                stream: true,
-            }, {
-                responseType: 'stream',
-                cancelToken: source.token,
-            });
-            // The promise will resolve when headers are received, but the stream is ongoing.
-            // We wrap the stream handling in a new promise to await its completion.
-            await new Promise((resolve, reject) => {
-                response.data.on('data', (chunk) => {
-                    if (cancellationToken.isCancellationRequested) {
-                        return; // Stop processing if cancelled
-                    }
-                    const lines = chunk.toString('utf8').split('\n').filter(line => line.trim() !== '');
-                    for (const line of lines) {
-                        if (line.trim() === 'data: [DONE]') {
-                            resolve();
-                            return;
-                        }
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const json = JSON.parse(line.substring(6));
-                                const content = json.choices[0]?.delta?.content;
-                                if (content) {
-                                    onData(content);
-                                }
-                            }
-                            catch (error) {
-                                logger_1.logger.error('Error parsing Groq stream chunk:', error);
-                                // Don't reject here, just log and continue
-                            }
-                        }
-                    }
-                });
-                response.data.on('error', (error) => {
-                    logger_1.logger.error("Error in Groq stream:", error);
-                    reject(error);
-                });
-                response.data.on('end', () => {
-                    resolve();
-                });
-            });
+            const response = await axios_1.default.post(GroqProvider.API_URL, {
+                messages: [{ role: 'user', content: prompt }],
+                model: GroqModel.LLAMA3_8B,
+                temperature: options?.temperature ?? 0.7,
+                max_tokens: options?.maxTokens ?? 1024,
+                stream: false,
+            }, { headers: this.getHeaders() });
+            return response.data.choices?.[0]?.message?.content ?? '';
         }
         catch (error) {
-            if (axios_1.default.isCancel(error)) {
-                logger_1.logger.log('Groq stream request was cancelled.');
-            }
-            else {
-                logger_1.logger.error('Error in Groq stream request:', error);
-                throw this.handleApiError(error);
+            throw this.handleApiError(error);
+        }
+    }
+    async *_stream(prompt, options) {
+        try {
+            const response = await axios_1.default.post(GroqProvider.API_URL, {
+                messages: [{ role: 'user', content: prompt }],
+                model: GroqModel.LLAMA3_8B,
+                temperature: options?.temperature ?? 0.7,
+                max_tokens: options?.maxTokens ?? 1024,
+                stream: true,
+            }, { headers: this.getHeaders(), responseType: 'stream' });
+            for await (const chunk of response.data) {
+                const lines = chunk.toString('utf8').split('\n').filter((line) => line.trim().startsWith('data: '));
+                for (const line of lines) {
+                    const msg = line.substring(6);
+                    if (msg === '[DONE]')
+                        return;
+                    try {
+                        const json = JSON.parse(msg);
+                        const content = json.choices?.[0]?.delta?.content;
+                        if (content)
+                            yield content;
+                    }
+                    catch (e) {
+                        logger_1.logger.warn('Failed to parse Groq stream chunk');
+                    }
+                }
             }
         }
-        finally {
-            registration.dispose();
+        catch (error) {
+            throw this.handleApiError(error);
         }
+    }
+    async _generateVision(prompt, images, options) {
+        throw new Error('Vision is not supported by GroqProvider.');
     }
     // ... (getContextWindowSize and handleApiError methods remain the same)
     handleApiError(error) {
@@ -110,6 +88,15 @@ class GroqProvider extends baseAIProvider_1.BaseAIProvider {
         else {
             return new Error(`Error setting up the request to Groq: ${error.message}`);
         }
+    }
+    getHeaders() {
+        // BaseAIProvider.auth ensures we have config; using apiKey style for Groq
+        const apiKey = this.auth?.key;
+        return {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
     }
 }
 exports.GroqProvider = GroqProvider;

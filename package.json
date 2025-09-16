@@ -1,23 +1,12 @@
 {
     "name": "my-ai-extension",
     "displayName": "My AI Extension",
-    "description": "Your all-in-one AI assistant for VS Code. Features context-aware chat, inline completions, automated testing, refactoring, and more.",
-    "version": "1.0.0",
-    "publisher": "your-publisher-name",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/your-username/my-ai-extension.git"
-    },
-    "bugs": {
-        "url": "https://github.com/your-username/my-ai-extension/issues"
-    },
-    "icon": "images/icon.png",
+    "description": "An AI-powered assistant for VS Code.",
+    "version": "0.0.1",
     "engines": {
         "vscode": "^1.80.0"
     },
     "categories": [
-        "AI",
-        "Programming Languages",
         "Other"
     ],
     "activationEvents": [],
@@ -38,12 +27,7 @@
             "properties": {
                 "my-ai-extension.general.logLevel": {
                     "type": "string",
-                    "enum": [
-                        "DEBUG",
-                        "INFO",
-                        "WARN",
-                        "ERROR"
-                    ],
+                    "enum": [ "DEBUG", "INFO", "WARN", "ERROR" ],
                     "default": "INFO",
                     "description": "Sets the logging output level for the extension."
                 },
@@ -72,20 +56,9 @@
                 },
                 "my-ai-extension.testing.defaultFramework": {
                     "type": "string",
-                    "enum": [
-                        "jest",
-                        "vitest",
-                        "mocha",
-                        "pytest",
-                        "junit"
-                    ],
+                    "enum": [ "jest", "vitest", "mocha", "pytest", "junit" ],
                     "default": "jest",
                     "description": "The default testing framework to use when generating new tests."
-                },
-                "my-ai-extension.telemetry.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable or disable anonymous usage analytics to help improve the extension."
                 }
             }
         }
@@ -99,23 +72,24 @@
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js",
-        "release": "npx vsce publish"
+        "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
         "@types/vscode": "^1.80.0",
         "@types/mocha": "^10.0.1",
         "@types/node": "18.x",
+        "@types/sinon": "^17.0.3",
         "@typescript-eslint/eslint-plugin": "^6.4.1",
         "@typescript-eslint/parser": "^6.4.1",
+        "@vscode/test-electron": "^2.3.9",
         "eslint": "^8.47.0",
         "glob": "^10.3.3",
         "mocha": "^10.2.0",
+        "sinon": "^17.0.1",
         "typescript": "^5.1.6",
         "ts-loader": "^9.4.4",
         "webpack": "^5.88.2",
-        "webpack-cli": "^5.1.4",
-        "vsce": "^2.15.0"
+        "webpack-cli": "^5.1.4"
     },
     "dependencies": {
         "@xenova/transformers": "^2.16.1",
@@ -129,4 +103,3 @@
         "tree-sitter-typescript": "^0.20.0"
     }
 }
-

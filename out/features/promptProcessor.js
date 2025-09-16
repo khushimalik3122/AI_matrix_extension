@@ -17,7 +17,7 @@ class PromptProcessor {
         this.conversationHistory.push(`User: ${userInput}`);
         const systemPrompt = this.constructSystemPrompt();
         try {
-            const response = await this.providerManager.generateResponse({ prompt: systemPrompt, temperature: 0.1 });
+            const response = await this.providerManager.generateResponse(systemPrompt, { temperature: 0.1 });
             const parsedJson = this.parseJsonResponse(response);
             if (parsedJson.clarifyingQuestions) {
                 const clarification = parsedJson;

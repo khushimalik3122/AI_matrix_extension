@@ -1,4 +1,5 @@
-import { AIProviderConfig } from '../types/aiProvider';
+// Define a placeholder for AIProviderConfig if not available from a shared types file
+export type AIProviderConfig = Record<string, any>;
 
 /**
  * Defines the structure of messages sent FROM the webview TO the extension.

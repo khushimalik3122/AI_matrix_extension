@@ -15,8 +15,7 @@ class BlueprintGenerator {
         const prompt = this.constructPrompt(blueprint);
         try {
             logger_1.logger.log("Generating detailed blueprint from AI...");
-            const response = await this.providerManager.generateResponse({
-                prompt,
+            const response = await this.providerManager.generateResponse(prompt, {
                 temperature: 0.0, // We want deterministic output for planning
                 maxTokens: 4096,
             });

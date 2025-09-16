@@ -6,10 +6,10 @@ import { logger } from '../utils/logger';
 // --- Handlebars Helpers ---
 // Register helpers for common casing needs in file/variable names.
 Handlebars.registerHelper('pascalCase', (str: string) => 
-    str.replace(/(\w)(\w*)/g, (g0, g1, g2) => g1.toUpperCase() + g2.toLowerCase()).replace(/\s+/g, '')
+    str.replace(/(\w)(\w*)/g, (g0: string, g1: string, g2: string) => g1.toUpperCase() + g2.toLowerCase()).replace(/\s+/g, '')
 );
 Handlebars.registerHelper('camelCase', (str: string) => 
-    Handlebars.helpers.pascalCase(str).replace(/^./, (g0) => g0.toLowerCase())
+    Handlebars.helpers.pascalCase(str).replace(/^./, (g0: string) => g0.toLowerCase())
 );
 Handlebars.registerHelper('kebabCase', (str: string) => 
     str.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase().replace(/\s+/g, '-')

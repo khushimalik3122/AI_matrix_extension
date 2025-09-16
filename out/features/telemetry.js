@@ -54,7 +54,6 @@ class TelemetryService {
                     logger_1.logger.error(`[TELEMETRY] Error: ${error.name}`, data);
                 }
             },
-            dispose: () => { }
         };
         if (!this.isEnabled) {
             logger_1.logger.log("Telemetry is disabled by user settings.");
@@ -75,9 +74,6 @@ class TelemetryService {
      */
     sendError(error, properties) {
         this.reporter.sendErrorData(error, properties);
-    }
-    dispose() {
-        this.reporter.dispose();
     }
 }
 exports.TelemetryService = TelemetryService;

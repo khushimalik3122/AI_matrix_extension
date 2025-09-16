@@ -20,11 +20,13 @@ export class BlueprintGenerator {
 
         try {
             logger.log("Generating detailed blueprint from AI...");
-            const response = await this.providerManager.generateResponse({
+            const response = await this.providerManager.generateResponse(
                 prompt,
-                temperature: 0.0, // We want deterministic output for planning
-                maxTokens: 4096,
-            });
+                {
+                    temperature: 0.0, // We want deterministic output for planning
+                    maxTokens: 4096,
+                }
+            );
 
             const detailedBlueprint = this.parseJsonResponse(response);
             

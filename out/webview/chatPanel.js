@@ -47,7 +47,13 @@ class ChatPanel {
         this._extensionUri = extensionUri;
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
         this._panel.webview.onDidReceiveMessage((message) => this.handleMessage(message), null, this._disposables);
-        this._panel.webview.html = (0, getChatWebviewContent_1.getChatWebviewContent)(this._panel.webview, this._extensionUri);
+        this._panel.webview.html = (0, getChatWebviewContent_1.getChatWebviewContent)(this._panel.webview, this._extensionUri, {
+            messages: [],
+            availableProviders: [],
+            activeProvider: '',
+            isLoading: true,
+            contextStrategy: 'semantic'
+        });
     }
     static createOrShow(extensionUri, providerManager, contextRetriever) {
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
@@ -90,7 +96,13 @@ class ChatPanel {
                 break;
             case 'clearHistory':
                 // In a real app, this would clear stored history. Here we just reset the view.
-                this._panel.webview.html = (0, getChatWebviewContent_1.getChatWebviewContent)(this._panel.webview, this._extensionUri);
+                this._panel.webview.html = (0, getChatWebviewContent_1.getChatWebviewContent)(this._panel.webview, this._extensionUri, {
+                    messages: [],
+                    availableProviders: this.providerManager.getAvailableProviders(),
+                    activeProvider: this.providerManager.getActiveProviderName(),
+                    isLoading: false,
+                    contextStrategy: 'semantic'
+                });
                 break;
         }
     }
@@ -110,7 +122,7 @@ class ChatPanel {
             const conversationId = Date.now().toString();
             this.postMessage({ type: 'streamStart', payload: { conversationId } });
             let fullResponse = "";
-            for await (const chunk of this.providerManager.streamResponse({ prompt: fullPrompt }, token)) {
+            for await (const chunk of this.providerManager.streamResponse(fullPrompt.toString(), { sessionId: conversationId })) {
                 if (token.isCancellationRequested)
                     break;
                 fullResponse += chunk;

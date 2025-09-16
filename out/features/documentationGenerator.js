@@ -65,7 +65,7 @@ class DocumentationGenerator {
             Provide only the complete docstring comment, ready to be inserted above the function.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         }
         catch (error) {
             logger_1.logger.error(`Error generating docstring: ${error.message}`);
@@ -90,7 +90,7 @@ class DocumentationGenerator {
             Generate the full content for the README.md file in Markdown format.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         }
         catch (error) {
             logger_1.logger.error(`Error generating README: ${error.message}`);
@@ -117,7 +117,7 @@ class DocumentationGenerator {
             Return the original code block with the improved comments.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         }
         catch (error) {
             logger_1.logger.error(`Error enhancing comments: ${error.message}`);
@@ -141,7 +141,7 @@ class DocumentationGenerator {
             Generate the changelog entry in Markdown format.
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         }
         catch (error) {
             logger_1.logger.error(`Error generating changelog entry: ${error.message}`);

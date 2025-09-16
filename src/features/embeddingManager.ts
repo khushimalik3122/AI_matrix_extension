@@ -78,14 +78,14 @@ export class EmbeddingManager {
      */
     public async addOrUpdateFile(uri: vscode.Uri): Promise<void> {
         if (this.isDegraded) {
-            logger.warn("Skipping embedding update: model is in a degraded state.");
+            logger.log("Skipping embedding update: model is in a degraded state.");
             return;
         }
         try {
             const structure = await this.codeParser.parse(uri);
             if (!structure) return;
 
-            const chunks = this.codeParser.chunk(structure);
+            const chunks = this.codeParser.chunkCode(structure);
             for (const chunk of chunks) {
                 const embedding = await this.generateEmbedding(chunk.content);
                 this.vectorStore.set(`${uri.toString()}#${chunk.id}`, { uri: uri.toString(), chunk, embedding });
@@ -112,11 +112,11 @@ export class EmbeddingManager {
     }
 
     /**
-     * Finds the top N most similar code chunks to a query embedding.
+     * Performs a semantic search and returns scored chunks.
      */
-    public async findSimilar(queryText: string, topN: number): Promise<VectorStoreItem[]> {
+    public async search(queryText: string, topN: number): Promise<{ chunk: import('../types/embedding').CodeChunk; similarity: number }[]> {
         if (this.isDegraded) {
-            logger.warn("Skipping similarity search: model is in a degraded state.");
+            logger.log("Skipping similarity search: model is in a degraded state.");
             return [];
         }
         if (this.vectorStore.size === 0) return [];
@@ -126,15 +126,26 @@ export class EmbeddingManager {
             
             const similarities = Array.from(this.vectorStore.values()).map(item => {
                 const similarity = this.cosineSimilarity(queryEmbedding, item.embedding);
-                return { item, similarity };
+                return { chunk: item.chunk, similarity };
             });
 
             similarities.sort((a, b) => b.similarity - a.similarity);
-            return similarities.slice(0, topN).map(s => s.item);
+            return similarities.slice(0, topN);
         } catch (error) {
             logger.error("Error during similarity search:", error);
             return [];
         }
+    }
+
+    /**
+     * Finds the top N most similar code chunks to a query embedding and returns raw vector store items.
+     * Kept for backward compatibility.
+     */
+    public async findSimilar(queryText: string, topN: number): Promise<VectorStoreItem[]> {
+        const results = await this.search(queryText, topN);
+        // Map back to vector store items by matching ids
+        const itemsById = new Map(Array.from(this.vectorStore.entries()).map(([key, val]) => [val.chunk.id, val]));
+        return results.map(r => itemsById.get(r.chunk.id)!).filter(Boolean);
     }
 
     private cosineSimilarity(vecA: number[], vecB: number[]): number {

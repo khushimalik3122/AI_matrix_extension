@@ -62,7 +62,7 @@ class CodeRefactorer {
             Respond in a clear, concise manner with the suggested new function.
         `;
         try {
-            const suggestion = await this.providerManager.generateResponse({ prompt });
+            const suggestion = await this.providerManager.generateResponse(prompt);
             return { description: "Extract to function", newCode: suggestion };
         }
         catch (error) {
@@ -89,7 +89,7 @@ class CodeRefactorer {
             Provide a clear explanation of the issue and the optimized code. If no optimizations are apparent, state that.
         `;
         try {
-            const suggestion = await this.providerManager.generateResponse({ prompt });
+            const suggestion = await this.providerManager.generateResponse(prompt);
             return { description: "Optimization Suggestion", newCode: suggestion };
         }
         catch (error) {
@@ -116,7 +116,7 @@ class CodeRefactorer {
             For each vulnerability found, describe the risk and suggest a remediation. If no vulnerabilities are found, state that the code appears safe.
         `;
         try {
-            const report = await this.providerManager.generateResponse({ prompt });
+            const report = await this.providerManager.generateResponse(prompt);
             return { description: "Security Scan Report", newCode: report };
         }
         catch (error) {

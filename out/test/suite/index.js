@@ -35,7 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.run = run;
 const path = __importStar(require("path"));
-const Mocha = __importStar(require("mocha"));
+const Mocha = require('mocha');
 const glob_1 = require("glob");
 function run() {
     // Create the mocha test
@@ -50,7 +50,7 @@ function run() {
             files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
             try {
                 // Run the mocha test
-                mocha.run(failures => {
+                mocha.run((failures) => {
                     if (failures > 0) {
                         e(new Error(`${failures} tests failed.`));
                     }

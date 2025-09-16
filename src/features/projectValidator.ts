@@ -13,6 +13,20 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 export class InlineCompletionProvider implements vscode.InlineCompletionItemProvider {
     // ... (constructor and other methods)
 
+    public async provideInlineCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        token: vscode.CancellationToken
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | undefined> {
+        return this.fetchCompletions(document, position, context);
+    }
+
+    private generateCacheKey(document: vscode.TextDocument, position: vscode.Position): string {
+        // Use document URI and position to generate a unique cache key
+        return `${document.uri.toString()}:${position.line}:${position.character}`;
+    }
+
     private async fetchCompletions(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -30,6 +44,9 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
 
         try {
             // ... (rest of the fetch logic)
+            // Replace this with your actual completion string, e.g. from a provider or context
+            const completionText = "Your completion text here";
+            const cleanCompletion = completionText.trim();
             const result = [new vscode.InlineCompletionItem(cleanCompletion)];
             
             // Update cache with timestamp

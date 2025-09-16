@@ -32,9 +32,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodebaseScanner = void 0;
 const vscode = __importStar(require("vscode"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const ignore_1 = __importDefault(require("ignore"));
 class CodebaseScanner {
     constructor() {
         this.watcher = null;
@@ -46,8 +52,6 @@ class CodebaseScanner {
         this.changedFiles = new Set();
         this.removedFiles = new Set();
         this.debounceTimer = null;
-        // ... (rest of the class remains the same)
-        // ... findRelevantFiles, isBinary, etc.
     }
     scanAndWatch() {
         this.initialScan();
@@ -98,6 +102,47 @@ class CodebaseScanner {
             this.onDidRemoveFilesEmitter.fire(Array.from(this.removedFiles));
             this.removedFiles.clear();
         }
+    }
+    // ... (rest of the class remains the same)
+    // ... findRelevantFiles, isBinary, etc.
+    /**
+     * Finds relevant files in the workspace, optionally respecting cancellation.
+     * @param token Cancellation token
+     * @returns Promise resolving to an array of vscode.Uri
+     */
+    async findRelevantFiles(token) {
+        const uris = [];
+        const exclude = await this.getIgnorePatterns();
+        for (const folder of vscode.workspace.workspaceFolders || []) {
+            if (token?.isCancellationRequested) {
+                break;
+            }
+            const files = await vscode.workspace.findFiles(new vscode.RelativePattern(folder, '**/*'), exclude.length > 0 ? `{${exclude.join(',')}}` : undefined);
+            uris.push(...files);
+        }
+        return uris;
+    }
+    /**
+     * Reads .gitignore and other ignore files to build an array of glob patterns to exclude.
+     */
+    async getIgnorePatterns() {
+        const patterns = [];
+        for (const folder of vscode.workspace.workspaceFolders || []) {
+            const gitignorePath = path.join(folder.uri.fsPath, '.gitignore');
+            if (fs.existsSync(gitignorePath)) {
+                const content = fs.readFileSync(gitignorePath, 'utf8');
+                const ig = (0, ignore_1.default)().add(content);
+                // Use the lines from .gitignore directly as patterns
+                const gitignorePatterns = content
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+                patterns.push(...gitignorePatterns);
+            }
+        }
+        // Add common binary and node_modules exclusions
+        patterns.push('**/node_modules/**', '**/*.exe', '**/*.dll', '**/*.bin');
+        return patterns;
     }
 }
 exports.CodebaseScanner = CodebaseScanner;

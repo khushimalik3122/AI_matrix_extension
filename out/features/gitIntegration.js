@@ -34,7 +34,7 @@ class GitIntegration {
             ---
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt, temperature: 0.0 });
+            return await this.providerManager.generateResponse(prompt, { temperature: 0.0 });
         }
         catch (error) {
             logger_1.logger.error(`Error generating commit message: ${error.message}`);
@@ -63,7 +63,7 @@ class GitIntegration {
             ---
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         }
         catch (error) {
             logger_1.logger.error(`Error generating PR description: ${error.message}`);
@@ -88,7 +88,7 @@ class GitIntegration {
             Provide a summary in Markdown with sections for "Key Feedback" and "Action Items".
         `;
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         }
         catch (error) {
             logger_1.logger.error(`Error summarizing code review: ${error.message}`);
@@ -110,7 +110,7 @@ class GitIntegration {
             Task: "${taskDescription}"
         `;
         try {
-            const response = await this.providerManager.generateResponse({ prompt, temperature: 0.0 });
+            const response = await this.providerManager.generateResponse(prompt, { temperature: 0.0 });
             return response.trim().replace(/\s+/g, '-'); // Ensure no spaces
         }
         catch (error) {

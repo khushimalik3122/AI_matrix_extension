@@ -53,6 +53,7 @@ class PerplexityProvider extends baseAIProvider_1.BaseAIProvider {
             textExplanation: true,
             projectScaffolding: true,
             streaming: true,
+            vision: false,
         };
         this.model = model;
         this.apiKey = auth.key;
@@ -113,6 +114,10 @@ class PerplexityProvider extends baseAIProvider_1.BaseAIProvider {
         catch (error) {
             this.handleApiError(error, 'Error during stream response');
         }
+    }
+    async _generateVision(prompt, images, options) {
+        // Not supported in this example provider
+        throw new Error('Vision is not supported by PerplexityProvider.');
     }
     /**
      * Creates the authorization headers for API requests.

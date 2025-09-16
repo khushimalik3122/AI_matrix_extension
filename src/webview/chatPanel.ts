@@ -28,7 +28,13 @@ export class ChatPanel {
             this._disposables
         );
 
-        this._panel.webview.html = getChatWebviewContent(this._panel.webview, this._extensionUri);
+        this._panel.webview.html = getChatWebviewContent(this._panel.webview, this._extensionUri, {
+            messages: [],
+            availableProviders: [],
+            activeProvider: '',
+            isLoading: true,
+            contextStrategy: 'semantic'
+        });
     }
 
     public static createOrShow(
@@ -84,7 +90,13 @@ export class ChatPanel {
                 break;
             case 'clearHistory':
                 // In a real app, this would clear stored history. Here we just reset the view.
-                this._panel.webview.html = getChatWebviewContent(this._panel.webview, this._extensionUri);
+                this._panel.webview.html = getChatWebviewContent(this._panel.webview, this._extensionUri, {
+                    messages: [],
+                    availableProviders: this.providerManager.getAvailableProviders(),
+                    activeProvider: this.providerManager.getActiveProviderName(),
+                    isLoading: false,
+                    contextStrategy: 'semantic'
+                });
                 break;
         }
     }
@@ -110,7 +122,7 @@ export class ChatPanel {
             this.postMessage({ type: 'streamStart', payload: { conversationId } });
 
             let fullResponse = "";
-            for await (const chunk of this.providerManager.streamResponse({ prompt: fullPrompt }, token)) {
+            for await (const chunk of this.providerManager.streamResponse(fullPrompt.toString(), { sessionId: conversationId })) {
                 if (token.isCancellationRequested) break;
                 fullResponse += chunk;
                 this.postMessage({ type: 'streamChunk', payload: { conversationId, chunk }});

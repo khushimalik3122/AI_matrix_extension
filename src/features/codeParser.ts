@@ -6,6 +6,7 @@ import TypeScript from 'tree-sitter-typescript';
 import Python from 'tree-sitter-python';
 import Java from 'tree-sitter-java';
 import { CodeFileStructure, CodeSymbol } from '../types/codeAnalysis';
+import { CodeChunk } from '../types/embedding';
 import { logger } from '../utils/logger';
 import * as fs from 'fs/promises';
 
@@ -51,7 +52,7 @@ export class CodeParser {
                     symbols = this.parseWithTreeSitter(content, uri, languageId);
                     break;
                 default:
-                    logger.warn(`Unsupported language for parsing: ${languageId}`);
+                    logger.log(`Unsupported language for parsing: ${languageId}`);
                     return null;
             }
             
@@ -73,10 +74,9 @@ export class CodeParser {
         // For simplicity in this example, we'll try to load it, but it may fail
         // without proper bundler configuration for WASM files.
         try {
-            await Parser.init();
             this.treeSitterParser.setLanguage(languageModule);
         } catch (e) {
-            logger.error(`Failed to initialize tree-sitter for ${wasmPath}. Ensure WASM files are correctly bundled.`, e);
+            logger.error(`Failed to initialize tree-sitter for ${wasmPath}. Ensure WASM files are correctly bundled. Error: ${e}`);
             throw new Error('Tree-sitter initialization failed.');
         }
     }
@@ -138,7 +138,7 @@ export class CodeParser {
                 }
             }
         } catch (e) {
-            logger.error(`Error executing tree-sitter query for ${language}:`, e);
+            logger.error(`Error executing tree-sitter query for ${language}: ${e}`);
         }
 
         return symbols;
@@ -162,5 +162,37 @@ export class CodeParser {
             end: new vscode.Position(endPos.line, endPos.character),
             // TODO: Extract documentation and other details
         };
+    }
+
+    /**
+     * Splits a parsed file structure into chunks for embedding/search.
+     */
+    public chunkCode(structure: CodeFileStructure): CodeChunk[] {
+        const document = vscode.window.visibleTextEditors.find(e => e.document.uri.fsPath === structure.uri.fsPath)?.document;
+        let content: string | undefined = document?.getText();
+        const chunks: CodeChunk[] = [];
+        for (const symbol of structure.symbols) {
+            if (!content) {
+                // Fallback: try to read document if not open
+                content = ''; // avoid undefined
+            }
+            const start = symbol.start;
+            const end = symbol.end;
+            let snippet = '';
+            try {
+                if (document) {
+                    snippet = document.getText(new vscode.Range(start, end));
+                }
+            } catch {
+                snippet = '';
+            }
+            chunks.push({
+                id: `${structure.uri.fsPath}#${symbol.name}`,
+                uri: structure.uri,
+                content: snippet,
+                symbol,
+            });
+        }
+        return chunks;
     }
 }

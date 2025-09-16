@@ -33,22 +33,64 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logger = void 0;
+exports.logger = exports.LogLevel = void 0;
 const vscode = __importStar(require("vscode"));
 // Create a dedicated output channel for the extension
 const outputChannel = vscode.window.createOutputChannel("My AI Extension");
+var LogLevel;
+(function (LogLevel) {
+    LogLevel[LogLevel["DEBUG"] = 0] = "DEBUG";
+    LogLevel[LogLevel["INFO"] = 1] = "INFO";
+    LogLevel[LogLevel["WARN"] = 2] = "WARN";
+    LogLevel[LogLevel["ERROR"] = 3] = "ERROR";
+})(LogLevel || (exports.LogLevel = LogLevel = {}));
+let currentLevel = LogLevel.INFO;
 exports.logger = {
-    log: (message) => {
-        const timestamp = new Date().toLocaleTimeString();
-        outputChannel.appendLine(`[INFO ${timestamp}] ${message}`);
+    setOutputLevel: (level) => {
+        currentLevel = level;
     },
-    error: (message) => {
-        const timestamp = new Date().toLocaleTimeString();
-        outputChannel.appendLine(`[ERROR ${timestamp}] ${message}`);
-        vscode.window.showErrorMessage(`My AI Extension Error: ${message}. See output for details.`);
+    debug: (...args) => {
+        if (currentLevel <= LogLevel.DEBUG) {
+            const timestamp = new Date().toLocaleTimeString();
+            outputChannel.appendLine(`[DEBUG ${timestamp}] ${args.map(stringify).join(' ')}`);
+        }
+    },
+    log: (...args) => {
+        if (currentLevel <= LogLevel.INFO) {
+            const timestamp = new Date().toLocaleTimeString();
+            outputChannel.appendLine(`[INFO ${timestamp}] ${args.map(stringify).join(' ')}`);
+        }
+    },
+    warn: (...args) => {
+        if (currentLevel <= LogLevel.WARN) {
+            const timestamp = new Date().toLocaleTimeString();
+            outputChannel.appendLine(`[WARN ${timestamp}] ${args.map(stringify).join(' ')}`);
+        }
+    },
+    error: (...args) => {
+        if (currentLevel <= LogLevel.ERROR) {
+            const timestamp = new Date().toLocaleTimeString();
+            outputChannel.appendLine(`[ERROR ${timestamp}] ${args.map(stringify).join(' ')}`);
+        }
+        const firstMessage = args[0] instanceof Error ? args[0].message : stringify(args[0]);
+        vscode.window.showErrorMessage(`My AI Extension Error: ${firstMessage}. See output for details.`);
     },
     show: () => {
         outputChannel.show();
     }
 };
+function stringify(value) {
+    if (value instanceof Error) {
+        return value.stack || value.message;
+    }
+    if (typeof value === 'object') {
+        try {
+            return JSON.stringify(value);
+        }
+        catch {
+            return String(value);
+        }
+    }
+    return String(value);
+}
 //# sourceMappingURL=logger.js.map

@@ -77,7 +77,7 @@ class CodeParser {
                     symbols = this.parseWithTreeSitter(content, uri, languageId);
                     break;
                 default:
-                    logger_1.logger.warn(`Unsupported language for parsing: ${languageId}`);
+                    logger_1.logger.log(`Unsupported language for parsing: ${languageId}`);
                     return null;
             }
             return { uri, languageId, symbols };
@@ -98,11 +98,10 @@ class CodeParser {
         // For simplicity in this example, we'll try to load it, but it may fail
         // without proper bundler configuration for WASM files.
         try {
-            await tree_sitter_1.default.init();
             this.treeSitterParser.setLanguage(languageModule);
         }
         catch (e) {
-            logger_1.logger.error(`Failed to initialize tree-sitter for ${wasmPath}. Ensure WASM files are correctly bundled.`, e);
+            logger_1.logger.error(`Failed to initialize tree-sitter for ${wasmPath}. Ensure WASM files are correctly bundled. Error: ${e}`);
             throw new Error('Tree-sitter initialization failed.');
         }
     }
@@ -155,7 +154,7 @@ class CodeParser {
             }
         }
         catch (e) {
-            logger_1.logger.error(`Error executing tree-sitter query for ${language}:`, e);
+            logger_1.logger.error(`Error executing tree-sitter query for ${language}: ${e}`);
         }
         return symbols;
     }
@@ -176,6 +175,38 @@ class CodeParser {
             end: new vscode.Position(endPos.line, endPos.character),
             // TODO: Extract documentation and other details
         };
+    }
+    /**
+     * Splits a parsed file structure into chunks for embedding/search.
+     */
+    chunkCode(structure) {
+        const document = vscode.window.visibleTextEditors.find(e => e.document.uri.fsPath === structure.uri.fsPath)?.document;
+        let content = document?.getText();
+        const chunks = [];
+        for (const symbol of structure.symbols) {
+            if (!content) {
+                // Fallback: try to read document if not open
+                content = ''; // avoid undefined
+            }
+            const start = symbol.start;
+            const end = symbol.end;
+            let snippet = '';
+            try {
+                if (document) {
+                    snippet = document.getText(new vscode.Range(start, end));
+                }
+            }
+            catch {
+                snippet = '';
+            }
+            chunks.push({
+                id: `${structure.uri.fsPath}#${symbol.name}`,
+                uri: structure.uri,
+                content: snippet,
+                symbol,
+            });
+        }
+        return chunks;
     }
 }
 exports.CodeParser = CodeParser;

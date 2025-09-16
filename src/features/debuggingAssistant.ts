@@ -43,7 +43,7 @@ export class DebuggingAssistant {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         } catch (err: any) {
             logger.error(`Error analyzing error: ${err.message}`);
             return "Sorry, I encountered an error while analyzing the issue.";
@@ -71,7 +71,7 @@ export class DebuggingAssistant {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         } catch (err: any) {
             logger.error(`Error analyzing memory usage: ${err.message}`);
             return "Sorry, I encountered an error while analyzing the memory report.";
@@ -96,7 +96,7 @@ export class DebuggingAssistant {
                 combinedContext += `\n\n--- File: ${vscode.workspace.asRelativePath(uriString)} ---\n`;
                 combinedContext += doc.getText().substring(0, 4000); // Limit context size per file
             } catch (error) {
-                logger.warn(`Could not read file for context: ${uriString}`);
+                logger.error(`Could not read file for context: ${uriString}`);
             }
         }
         return combinedContext;

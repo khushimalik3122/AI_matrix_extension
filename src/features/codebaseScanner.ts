@@ -77,5 +77,50 @@ export class CodebaseScanner {
     
     // ... (rest of the class remains the same)
     // ... findRelevantFiles, isBinary, etc.
+
+    /**
+     * Finds relevant files in the workspace, optionally respecting cancellation.
+     * @param token Cancellation token
+     * @returns Promise resolving to an array of vscode.Uri
+     */
+    public async findRelevantFiles(token?: vscode.CancellationToken): Promise<vscode.Uri[]> {
+        const uris: vscode.Uri[] = [];
+        const exclude = await this.getIgnorePatterns();
+
+        for (const folder of vscode.workspace.workspaceFolders || []) {
+            if (token?.isCancellationRequested) {
+                break;
+            }
+            const files = await vscode.workspace.findFiles(
+                new vscode.RelativePattern(folder, '**/*'),
+                exclude.length > 0 ? `{${exclude.join(',')}}` : undefined
+            );
+            uris.push(...files);
+        }
+        return uris;
+    }
+
+    /**
+     * Reads .gitignore and other ignore files to build an array of glob patterns to exclude.
+     */
+    private async getIgnorePatterns(): Promise<string[]> {
+        const patterns: string[] = [];
+        for (const folder of vscode.workspace.workspaceFolders || []) {
+            const gitignorePath = path.join(folder.uri.fsPath, '.gitignore');
+            if (fs.existsSync(gitignorePath)) {
+                const content = fs.readFileSync(gitignorePath, 'utf8');
+                const ig = ignore().add(content);
+                // Use the lines from .gitignore directly as patterns
+                const gitignorePatterns = content
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+                patterns.push(...gitignorePatterns);
+            }
+        }
+        // Add common binary and node_modules exclusions
+        patterns.push('**/node_modules/**', '**/*.exe', '**/*.dll', '**/*.bin');
+        return patterns;
+    }
 }
 

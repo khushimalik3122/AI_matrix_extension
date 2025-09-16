@@ -28,6 +28,7 @@ export class PerplexityProvider extends BaseAIProvider {
         textExplanation: true,
         projectScaffolding: true,
         streaming: true,
+        vision: false,
     };
 
     constructor(
@@ -104,6 +105,13 @@ export class PerplexityProvider extends BaseAIProvider {
             this.handleApiError(error, 'Error during stream response');
         }
     }
+
+    protected async _generateVision(prompt: string, images: { mimeType: 'image/png' | 'image/jpeg'; data: string }[], options?: GenerationOptions): Promise<string> {
+        // Not supported in this example provider
+        throw new Error('Vision is not supported by PerplexityProvider.');
+    }
+
+
 
     /**
      * Creates the authorization headers for API requests.

@@ -34,7 +34,7 @@ export class GitIntegration {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt, temperature: 0.0 });
+            return await this.providerManager.generateResponse(prompt, { temperature: 0.0 });
         } catch (error: any) {
             logger.error(`Error generating commit message: ${error.message}`);
             return "fix: unexpected error during commit message generation";
@@ -64,7 +64,7 @@ export class GitIntegration {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         } catch (error: any) {
             logger.error(`Error generating PR description: ${error.message}`);
             return `### Error\nCould not generate PR description: ${error.message}`;
@@ -90,7 +90,7 @@ export class GitIntegration {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         } catch (error: any) {
             logger.error(`Error summarizing code review: ${error.message}`);
             return `### Error\nCould not summarize review: ${error.message}`;
@@ -113,7 +113,7 @@ export class GitIntegration {
         `;
 
         try {
-            const response = await this.providerManager.generateResponse({ prompt, temperature: 0.0 });
+            const response = await this.providerManager.generateResponse(prompt, { temperature: 0.0 });
             return response.trim().replace(/\s+/g, '-'); // Ensure no spaces
         } catch (error: any) {
             logger.error(`Error suggesting branch name: ${error.message}`);

@@ -91,7 +91,7 @@ export class ContextRetriever {
         const searchResults = await this.embeddingManager.search(query, topK * 2); // Get more results to allow for boosting
 
         // Boost score for recently accessed files
-        const boostedResults = searchResults.map(result => {
+        const boostedResults = searchResults.map((result: { chunk: CodeChunk; similarity: number }) => {
             const recentIndex = this.recentFiles.findIndex(u => u.fsPath === result.chunk.uri.fsPath);
             if (recentIndex !== -1) {
                 // Boost score based on recency (higher boost for more recent files)
@@ -101,9 +101,9 @@ export class ContextRetriever {
             return result;
         });
 
-        boostedResults.sort((a, b) => b.similarity - a.similarity);
+        boostedResults.sort((a: { chunk: CodeChunk; similarity: number }, b: { chunk: CodeChunk; similarity: number }) => b.similarity - a.similarity);
 
-        return boostedResults.slice(0, topK).map(r => r.chunk);
+        return boostedResults.slice(0, topK).map((r: { chunk: CodeChunk; similarity: number }) => r.chunk);
     }
 
     private async retrieveLocalContext(): Promise<CodeChunk[]> {

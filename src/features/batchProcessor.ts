@@ -3,6 +3,7 @@ import { ProviderManager } from './providerManager';
 import { logger } from '../utils/logger';
 
 export class BatchProcessor {
+
     constructor(private providerManager: ProviderManager) {}
 
     /**
@@ -29,7 +30,7 @@ export class BatchProcessor {
                     ${document.getText()}
                     ---
                 `;
-                const newContent = await this.providerManager.generateResponse({ prompt, temperature: 0.0 });
+                const newContent = await this.providerManager.generateResponse(prompt, { temperature: 0.0 });
                 // Replace the entire document content with the AI's response
                 const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
                 return [vscode.TextEdit.replace(fullRange, newContent || '')];

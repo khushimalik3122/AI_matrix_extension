@@ -38,7 +38,7 @@ export class DocumentationGenerator {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         } catch (error: any) {
             logger.error(`Error generating docstring: ${error.message}`);
             return null;
@@ -65,7 +65,7 @@ export class DocumentationGenerator {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt, maxTokens: 1024 });
+            return await this.providerManager.generateResponse(prompt, { maxTokens: 1024 });
         } catch (error: any) {
             logger.error(`Error generating README: ${error.message}`);
             return null;
@@ -93,7 +93,7 @@ export class DocumentationGenerator {
         `;
         
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         } catch (error: any) {
             logger.error(`Error enhancing comments: ${error.message}`);
             return null;
@@ -118,7 +118,7 @@ export class DocumentationGenerator {
         `;
 
         try {
-            return await this.providerManager.generateResponse({ prompt });
+            return await this.providerManager.generateResponse(prompt);
         } catch (error: any) {
             logger.error(`Error generating changelog entry: ${error.message}`);
             return null;
